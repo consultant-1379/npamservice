@@ -1,0 +1,71 @@
+#!/bin/bash
+###########################################################################
+# COPYRIGHT Ericsson 2024
+#
+# The copyright to the computer program(s) herein is the property of
+# Ericsson Inc. The programs may be used and/or copied only with written
+# permission from Ericsson Inc. or in accordance with the terms and
+# conditions stipulated in the agreement/contract under which the
+# program(s) have been supplied.
+# This script requires bash 4 or above
+#
+###########################################################################
+
+MKDIR="/bin/mkdir"
+CHOWN="/bin/chown"
+CHMOD="/bin/chmod"
+
+JBOSS_USER="jboss_user"
+JBOSS_GROUP="jboss"
+LOG_TAG="NPAM"
+CONFIG_MGMT="/ericsson/config_mgt"
+NPAM_FOLDER="/ericsson/config_mgt/npam"
+IMPORT_FOLDER="/ericsson/config_mgt/npam/import"
+IMPORT_FOLDER_JOB="/ericsson/config_mgt/npam/import_job"
+WAIT_TIMES=10
+
+info()
+{
+ logger  -t ${LOG_TAG} -p user.notice "INFORMATION ( ${SCRIPT_NAME} ): $1"
+}
+
+error()
+{
+ logger  -t ${LOG_TAG} -p user.error "ERROR ( ${SCRIPT_NAME} ): $1"
+}
+
+function create_folder() {
+  if [ ! -d $1 ] ; then
+    info "Create $1 if not exists"
+    $MKDIR $1
+    if [ $? != 0 ] ; then
+      error "Failed to create $1"
+      exit 1
+    fi
+    info "Change own $1"
+    ${CHOWN} ${JBOSS_USER}:${JBOSS_GROUP} $1
+    ${CHMOD} 770 $1
+  else
+    info "Folder $1 already present nothing to do"
+  fi
+}
+
+
+################ MAIN
+count=0
+while [ ! -d ${CONFIG_MGMT} ] && [ ${count} -lt ${WAIT_TIMES} ] ; do
+   info "${CONFIG_MGMT} does not exist"
+  sleep 6
+  count=$((count+1))
+done
+
+if [ ${count} -eq ${WAIT_TIMES} ] ; then
+   error "${CONFIG_MGMT} does not exist"
+   exit 1
+fi
+
+info "Create FOLDERS for npam"
+create_folder ${NPAM_FOLDER}
+create_folder ${IMPORT_FOLDER}
+create_folder ${IMPORT_FOLDER_JOB}
+
